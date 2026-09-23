@@ -1,15 +1,39 @@
-- name: Install Tailscale
-  shell: powershell
-  run: |
-    $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
-    $installerPath = Join-Path $env:TEMP "tailscale.msi"
+name: RDP
 
-    Write-Host "Downloading Tailscale to: $installerPath"
+on:
+  workflow_dispatch:
 
-    Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
+jobs:
+  secure-rdp:
+    runs-on: windows-latest
 
-    if (!(Test-Path $installerPath)) {
-        throw "Tailscale installer was not downloaded."
-    }
+    steps:
+      - name: Configure Core RDP Settings
+        shell: powershell
+        run: |
+          Write-Host "Configuring RDP..."
 
-    Start-Process msiexec.exe -ArgumentList "/i `"$installerPath`" /qn /norestart" -Wait
+      - name: Create RDP User
+        shell: powershell
+        run: |
+          $password = "YourStrongPassword123!"
+          $securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+
+          New-LocalUser -Name "rdpuser" -Password $securePassword -AccountNeverExpires
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "rdpuser"
+
+      - name: Install Tailscale
+        shell: powershell
+        run: |
+          $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
+          $installerPath = Join-Path $env:TEMP "tailscale.msi"
+
+          Write-Host "Downloading Tailscale..."
+
+          Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
+
+          if (!(Test-Path $installerPath)) {
+              throw "Tailscale installer was not downloaded."
+          }
+
+          Start-Process msiexec.exe -ArgumentList "/i `"$installerPath`" /qn /norestart" -Wait
