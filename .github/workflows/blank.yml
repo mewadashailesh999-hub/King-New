@@ -1,0 +1,15 @@
+- name: Install Tailscale
+  shell: powershell
+  run: |
+    $tsUrl = "https://pkgs.tailscale.com/stable/tailscale-setup-1.82.0-amd64.msi"
+    $installerPath = Join-Path $env:TEMP "tailscale.msi"
+
+    Write-Host "Downloading Tailscale to: $installerPath"
+
+    Invoke-WebRequest -Uri $tsUrl -OutFile $installerPath
+
+    if (!(Test-Path $installerPath)) {
+        throw "Tailscale installer was not downloaded."
+    }
+
+    Start-Process msiexec.exe -ArgumentList "/i `"$installerPath`" /qn /norestart" -Wait
